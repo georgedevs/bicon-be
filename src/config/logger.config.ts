@@ -25,7 +25,7 @@ const maskPhonesInObject = (obj: unknown): unknown => {
 };
 
 export const getPinoConfig = (configService: ConfigService) => {
-  const isProd = configService.get<string>('nodeEnv') === 'production';
+  const isProd = process.env.NODE_ENV === 'production';
 
   return {
     // Override nestjs-pino's default { path: '*' } with the NestJS 11 named wildcard
