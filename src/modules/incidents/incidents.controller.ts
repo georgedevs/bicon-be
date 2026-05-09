@@ -77,3 +77,4 @@ export class IncidentsController {
     return apiResponse(incident);
   }
 }
+
