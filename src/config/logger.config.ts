@@ -24,6 +24,26 @@ const maskPhonesInObject = (obj: unknown): unknown => {
   );
 };
 
+// Build the pino-pretty transport config at module load time, using require.resolve
+// to give pino an absolute path. This bypasses pino's getCallers() stack-walk, which
+// fails in production Docker (multi-stage build strips src/ so caller paths don't exist
+// on disk and createRequire(callerPath).resolve('pino-pretty') throws for every frame).
+// We only construct this object when NOT in production so pino-pretty is never referenced
+// in the production container even if the package is accidentally installed.
+const devTransport =
+  process.env.NODE_ENV !== 'production'
+    ? {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        target: require.resolve('pino-pretty'),
+        options: {
+          colorize: true,
+          singleLine: true,
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname',
+        },
+      }
+    : undefined;
+
 export const getPinoConfig = (configService: ConfigService) => {
   const isProd = process.env.NODE_ENV === 'production';
 
@@ -35,17 +55,9 @@ export const getPinoConfig = (configService: ConfigService) => {
     pinoHttp: {
       level: isProd ? 'info' : 'debug',
 
-      transport: !isProd
-        ? {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              singleLine: true,
-              translateTime: 'HH:MM:ss Z',
-              ignore: 'pid,hostname',
-            },
-          }
-        : undefined,
+      // devTransport is undefined in production — pino never sees a transport key.
+      // In dev it carries an absolute path so fixTarget() short-circuits immediately.
+      transport: devTransport,
 
       formatters: {
         level: (label: string) => ({ level: label }),
