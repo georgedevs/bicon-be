@@ -42,7 +42,7 @@ async function bootstrap(): Promise<void> {
 
   // 2. CORS
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    origin: '*',
     credentials: true,
   });
 
